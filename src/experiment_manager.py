@@ -15,7 +15,7 @@ class ExperimentManager:
         self._experiment_queue: List[Any] = []
         self._unpack_directory: Path = mkdir("./.unpack/")
         self._enqueue_handlers: Dict[str, Callable[[Path], None]] = {".zip": self._enqueue_zip,
-                                                                     ".json": self._enqueue_json}
+                                                                     ".experiment": self._enqueue_experiment}
 
         self._current_experiment: Optional[Experiment] = None
 
@@ -23,15 +23,18 @@ class ExperimentManager:
         file_extension: str = deployment_file.suffix
 
         try:
+            if file_extension not in self._enqueue_handlers:
+                logging.error(f"Unable to enqueue \"{deployment_file.absolute()}\": "
+                              f"File extension \"{file_extension}\" is not supported!")
+                return
+
             self._enqueue_handlers.get(file_extension)(deployment_file)
-        except KeyError:
-            logging.error(f"Unable to enqueue \"{deployment_file.absolute()}\": "
-                          f"File extension \"{file_extension}\" is not supported!")
         except BaseException as exception:
             logging.error(f"Unable to enqueue \"{deployment_file.absolute()}\":"
                           f"{exception}")
 
-        os.remove(str(deployment_file.absolute()))
+        finally:
+            os.remove(str(deployment_file.absolute()))
 
     def _enqueue_zip(self, deployment_file: Path) -> None:
         file_name: str = deployment_file.stem
@@ -43,24 +46,25 @@ class ExperimentManager:
         logging.info(f"ZIP: Successfully unpacked experiment.")
         self._try_extract_experiment(unpack_dir)
 
-    def _enqueue_json(self, deployment_file: Path) -> None:
+    def _enqueue_experiment(self, deployment_file: Path) -> None:
         file_name: str = deployment_file.stem
         tmp_dir: Path = mkdir(self._unpack_directory, file_name)
         shutil.copy(str(deployment_file.absolute()), str(tmp_dir.absolute()))
 
-        logging.info(f"JSON: Successfully unpacked experiment.")
+        logging.info(f"EXPERIMENT: Successfully unpacked experiment.")
         self._try_extract_experiment(tmp_dir)
 
     def _try_extract_experiment(self, experiment_dir: Path) -> None:
-        experiment_configuration: Path = Path(experiment_dir, "experiment.json")
-        if not experiment_configuration.exists():
-            raise Exception(f"Expected \"{experiment_configuration.absolute()}\" to exist, but it doesnt.")
-
-        experiment: Experiment = Experiment(experiment_configuration)
-        self._experiment_queue.append(experiment)
+        for experiment_file in experiment_dir.glob("*.experiment"):
+            experiment: Experiment = Experiment(experiment_file)
+            self._experiment_queue.append(experiment)
+            logging.info(f"Successfully enqueued {experiment.name}.")
 
         shutil.rmtree(str(experiment_dir.absolute()))
-        logging.info(f"Successfully enqueued {experiment.name}.")
+
+    @property
+    def current_experiment(self) -> Optional[Experiment]:
+        return self._current_experiment
 
     def run(self) -> None:
         if self._current_experiment is None and len(self._experiment_queue) > 0:
