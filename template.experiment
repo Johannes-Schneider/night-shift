@@ -1,0 +1,120 @@
+{
+    "name": "experiment-name",
+    "hosts": [
+        "host1",
+        "host2",
+        "host3"
+    ],
+    "parameters": {
+        "common": {
+            "ssh-user": "user.name",
+            "optional-constant": "Hello",
+            "nested-parameter": "{{optional-constant}} World!",
+            "host-name": "node {{host}}",
+            "base-dir": "~/my-dir",
+        },
+        "specific": [
+            {
+                "hosts": [
+                    "host01"
+                ],
+                "specific-parameter": 42,
+                "base-dir": "~/my-special-dir"
+            }
+        ]
+    },
+    "phases": [
+        {
+            "name": "clean",
+            "do": {
+                "common": [
+                    {
+                        "ssh": true,
+                        "type": "mkdir",
+                        "parameters": {
+                            "paths": [
+                                "{{base-dir}}",
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "run",
+            "do": {
+                "specific": [
+                    {
+                        "hosts": [
+                            "host01"
+                        ],
+                        "ssh": true,
+                        "type": "screen",
+                        "parameters": {
+                            "name": "{{experiment-name}}",
+                            "command": "sh {{base-dir}}/long-running-task.sh",
+                            "wait-for-termination": true,
+                            "check-termination-interval": "1m",
+                            "timeout": "5m"
+                        }
+                    },
+                    {
+                        "hosts": [
+                            "host02",
+                            "host03"
+                        ],
+                        "ssh": true,
+                        "type": "screen",
+                        "parameters": {
+                            "name": "{{experiment-name}}",
+                            "command": "java -jar {{base-dir}}/app.jar",
+                            "wait-for-termination": true,
+                            "check-termination-interval": "1m",
+                            "timeout": "5m"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "collect",
+            "do": {
+                "specific": [
+                    {
+                        "hosts": [
+                            "host01"
+                        ],
+                        "ssh": true,
+                        "type": "bash",
+                        "parameters": {
+                            "command": "echo $(cat {{ssh-user}}@{{host}}:{{base-dir}}/file.txt) >> my-file.txt"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "cooldown",
+            "do": {
+                "common": [
+                    {
+                        "ssh": false,
+                        "type": "sleep",
+                        "parameters": {
+                            "time": "10s"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "run": {
+        "repeat": 10,
+        "pipeline": [
+            "clean",
+            "run",
+            "collect",
+            "cooldown"
+        ]
+    }
+}
