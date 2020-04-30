@@ -81,7 +81,7 @@ class Experiment(Configurable):
                         logging.info(f"EXPERIMENT {self._experiment.name}: Finished")
                         return False
 
-                    self._current_repetition = 0
+                    self._current_repetition = 1
                     self._current_phase_status = None
 
                 self._current_pipeline = [phase_name for phase_name in self.phases]
@@ -134,8 +134,8 @@ class Experiment(Configurable):
     def get_command_executor(self, task: BaseTask) -> BaseCommandExecutor:
         host: str = task.host
 
-        if __debug__:
-            return DummyCommandExecutor(task.use_ssh, self.parameters.value(host, "ssh-user"), host)
+        # if __debug__:
+        #     return DummyCommandExecutor(task.use_ssh, self.parameters.value(host, "ssh-user"), host)
 
         if not task.use_ssh:
             return LocalCommandExecutor()
@@ -147,3 +147,7 @@ class Experiment(Configurable):
 
     def run(self) -> BaseStatus:
         return self.runner.run()
+
+    def tear_down(self) -> None:
+        for host in self._ssh_connections:
+            self._ssh_connections[host].close()

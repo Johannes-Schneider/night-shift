@@ -11,7 +11,7 @@ class BaseCommandExecutor(ABC):
 
     @staticmethod
     def _log_response(header: str, command: str, response: List[str]) -> None:
-        response_as_string: str = "\n".join(response)
+        response_as_string: str = "<new line>".join(response) if len(response) > 0 else "<no response>"
         logging.debug(f"{header}: {command} >> {response_as_string}")
 
     @abstractmethod

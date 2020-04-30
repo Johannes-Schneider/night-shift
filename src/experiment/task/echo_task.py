@@ -23,10 +23,16 @@ class EchoTask(BaseTask):
 
         overwrite: bool = to_bool(self.parameters["overwrite"]) if "overwrite" in self.parameters else False
         file: str = experiment.parameters.resolve(self.host, self.parameters["file"])
-        lines: str = "\n".join(experiment.parameters.resolve(self.host, list(self.parameters["lines"])))
+        lines: str = experiment.parameters.resolve(self.host, list(self.parameters["lines"]))
         operator: str = ">" if overwrite else ">>"
 
         cmd: BaseCommandExecutor = experiment.get_command_executor(self)
-        cmd.execute(f"echo {lines} {operator} {file}")
+        is_first: bool = True
+        for line in lines:
+            if not is_first:
+                operator = ">>"
+
+            cmd.execute(f"echo \"{line}\" {operator} {file}")
+            is_first = False
 
         return DoneStatus()
