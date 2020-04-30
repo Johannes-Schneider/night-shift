@@ -74,4 +74,5 @@ class ExperimentManager:
             return
 
         if self._current_experiment.run().is_done():
+            self._current_experiment.tear_down()
             self._current_experiment = None
