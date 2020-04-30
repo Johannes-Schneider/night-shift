@@ -18,7 +18,7 @@ from src.experiment.task.base_task import BaseTask
 
 
 class Experiment(Configurable):
-    class Runner(Configurable):
+    class Runner:
 
         _pause_until: Optional[datetime] = None
         _log_pause: bool = False
@@ -36,24 +36,25 @@ class Experiment(Configurable):
         def resume() -> None:
             Experiment.Runner._pause_until = None
 
-        def __init__(self, experiment: "Experiment", properties: Dict[str, Any]):
-            super().__init__(properties)
+        def __init__(self, experiment: "Experiment", properties: List[Dict[str, Any]]):
+            self._properties: List[Dict[str, Any]] = properties
+            self._properties_index: int = 0
             self._experiment: "Experiment" = experiment
-            self._current_run: int = 0
+            self._current_repetition: int = 0
             self._current_pipeline: List[str] = []
             self._current_phase_status: Optional[BaseStatus] = None
 
-        def _initialize_cache(self):
-            self._fill_cache("repeat", lambda value: int(value), 1)
-            self._fill_cache("pipeline", lambda value: list(value))
+        @property
+        def run_configuration(self) -> Dict[str, Any]:
+            return self._properties[self._properties_index]
 
         @property
-        def runs(self) -> int:
-            return self._cached_property_value("repeat")
+        def repetitions(self) -> int:
+            return self.run_configuration["repeat"] if "repeat" in self.run_configuration else 1
 
         @property
-        def pipeline(self) -> List[str]:
-            return self._cached_property_value("pipeline")
+        def phases(self) -> List[str]:
+            return list(self.run_configuration["phases"])
 
         def run(self) -> BaseStatus:
             if not self._current_phase_is_done():
@@ -72,21 +73,28 @@ class Experiment(Configurable):
 
         def _try_start_next_phase(self) -> bool:
             if len(self._current_pipeline) == 0:
-                self._current_run += 1
-                self._current_pipeline = [phase_name for phase_name in self.pipeline]
+                self._current_repetition += 1
+                if self._current_repetition > self.repetitions:
+                    # go to the next pipeline
+                    self._properties_index += 1
+                    if self._properties_index >= len(self._properties):
+                        logging.info(f"EXPERIMENT {self._experiment.name}: Finished")
+                        return False
+
+                    self._current_repetition = 0
+                    self._current_phase_status = None
+
+                self._current_pipeline = [phase_name for phase_name in self.phases]
 
             if self._pause_until and datetime.now() < self._pause_until:
                 if self._log_pause:
-                    logging.info(f"EXPERIMENT {self._experiment.name} ({self._current_run} / {self.runs}): Paused until {self._pause_until}")
+                    logging.info(f"EXPERIMENT {self._experiment.name} ({self._current_repetition} / {self.repetitions}): Paused until {self._pause_until}")
                     self._log_pause = False
 
                 return True
 
-            if self._current_run > self.runs or len(self._current_pipeline) == 0:
-                return False
-
             next_phase: Phase = self._experiment.phases[self._current_pipeline.pop(0)]
-            logging.info(f"EXPERIMENT {self._experiment.name} ({self._current_run} / {self.runs}): {next_phase.name}")
+            logging.info(f"EXPERIMENT {self._experiment.name} ({self._current_repetition} / {self.repetitions}): {next_phase.name}")
             self._current_phase_status = next_phase.run()
             return True
 

@@ -11,7 +11,7 @@
             "optional-constant": "Hello",
             "nested-parameter": "{{optional-constant}} World!",
             "host-name": "node {{host}}",
-            "base-dir": "~/my-dir",
+            "base-dir": "~/my-dir"
         },
         "specific": [
             {
@@ -33,7 +33,7 @@
                         "type": "mkdir",
                         "parameters": {
                             "paths": [
-                                "{{base-dir}}",
+                                "{{base-dir}}"
                             ]
                         }
                     }
@@ -108,13 +108,19 @@
             }
         }
     ],
-    "run": {
-        "repeat": 10,
-        "pipeline": [
-            "clean",
-            "run",
-            "collect",
-            "cooldown"
-        ]
-    }
+    "run": [
+        {
+            "phases": [
+                "clean"
+            ]
+        },
+        {
+            "repeat": 10,
+            "phases": [
+                "run",
+                "collect",
+                "cooldown"
+            ]
+        }
+    ]
 }

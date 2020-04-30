@@ -12,12 +12,14 @@ class BaseTask(Configurable, ABC):
     @staticmethod
     def sub_task_factory() -> Dict[str, Callable[[str, Dict[str, Any]], "BaseTask"]]:
         from src.experiment.task.bash_task import BashTask
+        from src.experiment.task.echo_task import EchoTask
         from src.experiment.task.mkdir_task import MkDirTask
         from src.experiment.task.screen_task import ScreenTask
         from src.experiment.task.sleep_task import SleepTask
 
         return {
             BashTask.type(): BashTask,
+            EchoTask.type(): EchoTask,
             MkDirTask.type(): MkDirTask,
             ScreenTask.type(): ScreenTask,
             SleepTask.type(): SleepTask,
