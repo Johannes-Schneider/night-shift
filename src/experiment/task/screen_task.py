@@ -1,11 +1,10 @@
 from datetime import timedelta, datetime
 from typing import Any, List
 
-from src import utility
 from src.command.base_command_executor import BaseCommandExecutor
-from src.experiment.task.base_task import BaseTask
 from src.experiment.status.base_status import BaseStatus
 from src.experiment.status.done_status import DoneStatus
+from src.experiment.task.base_task import BaseTask
 from src.utility import assert_is_experiment, to_bool, to_timespan
 
 
@@ -43,7 +42,7 @@ class ScreenTask(BaseTask):
     def _validate_parameters(self) -> None:
         self._validate_parameter("name", str)
         self._validate_parameter("command", str)
-        self._validate_parameter("timeout", str, utility.STRING_TO_TIMESPAN_PATTERN)
+        self._validate_parameter("timeout", str)
 
     def execute(self, experiment: Any) -> BaseStatus:
         from src.experiment.experiment import Experiment
