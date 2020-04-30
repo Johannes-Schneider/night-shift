@@ -94,6 +94,10 @@ class Experiment(Configurable):
                 return True
 
             next_phase: Phase = self._experiment.phases[self._current_pipeline.pop(0)]
+
+            self._experiment.parameters.set_value("experiment-repetition", str(self._current_repetition))
+            self._experiment.parameters.set_value("experiment-repetitions", str(self.repetitions))
+
             logging.info(f"EXPERIMENT {self._experiment.name} ({self._current_repetition} / {self.repetitions}): {next_phase.name}")
             self._current_phase_status = next_phase.run()
             return True

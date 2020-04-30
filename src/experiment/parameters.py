@@ -133,6 +133,26 @@ class Parameters:
 
         return self._common_parameters[parameter_name]
 
+    def set_value(self, parameter_name: str, parameter_value: str, host: Optional[str] = None) -> None:
+        parameters: Dict[str, str] = self._common_parameters
+        if host is not None:
+            if host not in self._specific_parameters:
+                self._specific_parameters[host] = {}
+
+            parameters = self._specific_parameters[host]
+
+        parameters[parameter_name] = parameter_value
+
+    def unset_parameter(self, parameter_name: str, host: Optional[str] = None) -> None:
+        parameters: Dict[str, str] = self._common_parameters
+        if host is not None:
+            if host not in self._specific_parameters:
+                return
+
+            parameters = self._specific_parameters[host]
+
+        parameters.pop(parameter_name)
+
     def _try_get_specific_value(self, host: str, parameter_name: str) -> Optional[str]:
         if parameter_name == "host":
             return host
