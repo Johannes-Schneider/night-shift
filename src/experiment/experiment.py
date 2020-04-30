@@ -125,7 +125,9 @@ class Experiment(Configurable):
 
     def get_command_executor(self, task: BaseTask) -> BaseCommandExecutor:
         host: str = task.host
-        return DummyCommandExecutor(task.use_ssh, self.parameters.value(host, "ssh-user"), host)
+
+        if __debug__:
+            return DummyCommandExecutor(task.use_ssh, self.parameters.value(host, "ssh-user"), host)
 
         if not task.use_ssh:
             return LocalCommandExecutor()
