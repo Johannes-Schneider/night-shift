@@ -61,4 +61,7 @@ class ScreenTask(BaseTask):
         if not wait_for_termination:
             return DoneStatus()
 
-        return ScreenTask.Status(cmd, name, check_termination_interval, timeout)
+        return ScreenTask.Status(cmd,
+                                 name,
+                                 experiment.parameters.resolve(self.host, check_termination_interval),
+                                 experiment.parameters.resolve(self.host, timeout))
