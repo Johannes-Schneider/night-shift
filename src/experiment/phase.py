@@ -77,6 +77,9 @@ class Phase(Configurable):
     def _run_tasks(self, tasks: Dict[str, List[BaseTask]]) -> List[BaseStatus]:
         status: List[BaseStatus] = []
         for host in tasks:
+            if host not in self._experiment.hosts:
+                continue
+
             for task in tasks[host]:
                 status.append(task.execute(self._experiment))
 
