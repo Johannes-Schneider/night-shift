@@ -1,0 +1,15 @@
+{
+  "hosts": [
+    {
+      "name": "host01",
+      "aliases": ["192.168.1.1"],
+      "ssh-address": "192.168.1.1",
+      "ssh-port": 22,
+      "ssh-user": "joe.doe",
+      "ssh-key": "/home/joe.doe/.ssh/cluster-key"
+    }
+  ],
+  "common": {
+    "ssh-user": "root"
+  }
+}
