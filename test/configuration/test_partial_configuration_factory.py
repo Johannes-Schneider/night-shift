@@ -8,6 +8,10 @@ from src.configuration.partial_configuration_factory import PartialConfiguration
 
 class TestPartialConfigurationFactory(TestCase):
 
+    def test_cannot_be_instantiated(self):
+        with self.assertRaises(NotImplementedError):
+            PartialConfigurationFactory()
+
     def test_to_lower(self):
         my_dict: Dict[str, Any] = {
             "UPPER": 0,
@@ -137,6 +141,10 @@ class TestPartialConfigurationFactory(TestCase):
     def test_assert_is_list_of_str(self):
         lst: List[str] = ["1", "2", "test", "value"]
         self.assertEqual(lst, PartialConfigurationFactory.assert_is_list_of_str(TestCase, "property_name", lst))
+
+    def test_assert_is_list_of_str_does_not_accept_none(self):
+        with self.assertRaises(Exception):
+            PartialConfigurationFactory.assert_is_list_of_str(TestCase, "property_name", None)
 
     def test_assert_is_list_of_str_does_not_accept_mixed_lists(self):
         with self.assertRaises(TypeError):

@@ -12,28 +12,32 @@ class HostConfigurationFactory(PartialConfigurationFactory):
     __HOSTS_PROPERTY_KEY: str = "hosts"
 
     __SHARABLE_PROPERTY_NAMES: List[str] = [
-        HostConfiguration.ssh_user.__name__,
-        HostConfiguration.ssh_port.__name__,
-        HostConfiguration.ssh_key.__name__,
+        HostConfiguration.ssh_user.fget.__name__,
+        HostConfiguration.ssh_port.fget.__name__,
+        HostConfiguration.ssh_key.fget.__name__,
     ]
 
     __PROPERTY_VALIDATION: Dict[str, Callable[[type, str, Any], Any]] = {
-        HostConfiguration.name.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.aliases.__name__: PartialConfigurationFactory.assert_is_list_of_str,
-        HostConfiguration.ssh_user.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.ssh_address.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.ssh_port.__name__: PartialConfigurationFactory.assert_is_int,
-        HostConfiguration.ssh_key.__name__: PartialConfigurationFactory.assert_is_existing_file,
+        HostConfiguration.name.fget.__name__: PartialConfigurationFactory.assert_is_str,
+        HostConfiguration.aliases.fget.__name__: PartialConfigurationFactory.assert_is_list_of_str,
+        HostConfiguration.ssh_user.fget.__name__: PartialConfigurationFactory.assert_is_str,
+        HostConfiguration.ssh_address.fget.__name__: PartialConfigurationFactory.assert_is_str,
+        HostConfiguration.ssh_port.fget.__name__: PartialConfigurationFactory.assert_is_int,
+        HostConfiguration.ssh_key.fget.__name__: PartialConfigurationFactory.assert_is_existing_file,
     }
 
     __PROPERTY_SETTER: Dict[str, Callable[[HostConfiguration, Any], None]] = {
-        HostConfiguration.name.__name__: HostConfiguration.name,
-        HostConfiguration.aliases.__name__: HostConfiguration.aliases,
-        HostConfiguration.ssh_user.__name__: HostConfiguration.ssh_user,
-        HostConfiguration.ssh_address.__name__: HostConfiguration.ssh_address,
-        HostConfiguration.ssh_port.__name__: HostConfiguration.ssh_port,
-        HostConfiguration.ssh_key.__name__: HostConfiguration.ssh_key,
+        HostConfiguration.name.fget.__name__: HostConfiguration.name.fset,
+        HostConfiguration.aliases.fget.__name__: HostConfiguration.aliases.fset,
+        HostConfiguration.ssh_user.fget.__name__: HostConfiguration.ssh_user.fset,
+        HostConfiguration.ssh_address.fget.__name__: HostConfiguration.ssh_address.fset,
+        HostConfiguration.ssh_port.fget.__name__: HostConfiguration.ssh_port.fset,
+        HostConfiguration.ssh_key.fget.__name__: HostConfiguration.ssh_key.fset,
     }
+
+    def __init__(self):
+        super().__init__()
+        raise NotImplementedError
 
     @staticmethod
     def default() -> HostConfiguration:
@@ -46,11 +50,11 @@ class HostConfigurationFactory(PartialConfigurationFactory):
         return config
 
     @staticmethod
-    def all_from_json(properties: Dict[str, Any]) -> List[HostConfiguration]:
+    def extract_all_configuration(properties: Dict[str, Any]) -> List[HostConfiguration]:
         properties = PartialConfigurationFactory.to_lower(properties)
 
         configs: List[HostConfiguration] = []
-        base_config: HostConfiguration = HostConfigurationFactory.shared_from_json(properties)
+        base_config: HostConfiguration = HostConfigurationFactory.extract_shared_configuration(properties)
 
         if HostConfigurationFactory.__HOSTS_PROPERTY_KEY not in properties:
             logging.error(f"Mandatory property \"{HostConfigurationFactory.__HOSTS_PROPERTY_KEY}\" was not found!")
@@ -71,7 +75,7 @@ class HostConfigurationFactory(PartialConfigurationFactory):
                 configs.append(config)
 
             elif isinstance(host, dict):
-                configs.append(HostConfigurationFactory.from_json(host, base_config))
+                configs.append(HostConfigurationFactory.extract_single_configuration(host, base_config))
 
             else:
                 logging.error(f"Entries within the \"{HostConfigurationFactory.__HOSTS_PROPERTY_KEY}\" must be of type string or dict!")
@@ -80,7 +84,7 @@ class HostConfigurationFactory(PartialConfigurationFactory):
         return configs
 
     @staticmethod
-    def shared_from_json(properties: Dict[str, Any]) -> HostConfiguration:
+    def extract_shared_configuration(properties: Dict[str, Any]) -> HostConfiguration:
         properties = PartialConfigurationFactory.to_lower(properties)
 
         config: HostConfiguration = HostConfigurationFactory.default()
@@ -93,23 +97,23 @@ class HostConfigurationFactory(PartialConfigurationFactory):
             raise Exception
 
         config = HostConfiguration(config)
-        HostConfigurationFactory._set_config_properties(config,
-                                                        properties[HostConfigurationFactory.__SHARED_PROPERTY_KEY],
-                                                        HostConfigurationFactory.__SHARABLE_PROPERTY_NAMES)
+        HostConfigurationFactory._set_configuration_properties(config,
+                                                               properties[HostConfigurationFactory.__SHARED_PROPERTY_KEY],
+                                                               HostConfigurationFactory.__SHARABLE_PROPERTY_NAMES)
 
         return config
 
     @staticmethod
-    def from_json(properties: Dict[str, Any], parent: Optional[HostConfiguration] = None) -> HostConfiguration:
+    def extract_single_configuration(properties: Dict[str, Any], parent: Optional[HostConfiguration] = None) -> HostConfiguration:
         properties = PartialConfigurationFactory.to_lower(properties)
 
         config: HostConfiguration = HostConfiguration(parent)
-        HostConfigurationFactory._set_config_properties(config, properties)
+        HostConfigurationFactory._set_configuration_properties(config, properties)
 
         return config
 
     @staticmethod
-    def _set_config_properties(config: HostConfiguration, properties: Dict[str, Any], supported_properties: Optional[List[str]] = None) -> None:
+    def _set_configuration_properties(config: HostConfiguration, properties: Dict[str, Any], supported_properties: Optional[List[str]] = None) -> None:
         unused_properties: List[str] = []
 
         for property_name in properties:

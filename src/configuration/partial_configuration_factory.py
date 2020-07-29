@@ -52,8 +52,12 @@ class PartialConfigurationFactory:
     def assert_is_existing_file(config_class: type, property_name: str, property_value: Any) -> Path:
         path: Path = Path(PartialConfigurationFactory.assert_is_str(config_class, property_name, property_value))
 
-        if not path.exists() or not path.is_file():
-            logging.error(f"Property \"{property_name}\" of \"{config_class.__name__}\" must be an existing file!")
+        if not path.exists():
+            logging.error(f"Property \"{property_name}\" (\"{property_value}\") of \"{config_class.__name__}\" cannot be found!")
+            raise Exception
+
+        elif not path.is_file():
+            logging.error(f"Property \"{property_name}\" (\"{property_value}\") of \"{config_class.__name__}\" must be a file!")
             raise Exception
 
         return path
