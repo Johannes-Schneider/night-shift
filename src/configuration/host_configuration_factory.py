@@ -1,5 +1,6 @@
 import getpass
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Callable, Any, Optional, List
 
@@ -8,31 +9,40 @@ from src.configuration.partial_configuration_factory import PartialConfiguration
 
 
 class HostConfigurationFactory(PartialConfigurationFactory):
-    __SHARED_PROPERTY_KEY: str = "common"
-    __HOSTS_PROPERTY_KEY: str = "hosts"
+    class PropertyKey:
+        Hosts: str = "hosts"
 
-    __SHARABLE_PROPERTY_NAMES: List[str] = [
-        HostConfiguration.ssh_user.fget.__name__,
-        HostConfiguration.ssh_port.fget.__name__,
-        HostConfiguration.ssh_key.fget.__name__,
+        HostName: str = "name"
+        HostAliases: str = "aliases"
+        SSHUser: str = "ssh-user"
+        SSHAddress: str = "ssh-address"
+        SSHPort: str = "ssh-port"
+        SSHKey: str = "ssh-key"
+
+        SharedProperties: str = "common"
+
+    __SHARABLE_PROPERTIES: List[str] = [
+        PropertyKey.SSHUser,
+        PropertyKey.SSHPort,
+        PropertyKey.SSHKey,
     ]
 
     __PROPERTY_VALIDATION: Dict[str, Callable[[type, str, Any], Any]] = {
-        HostConfiguration.name.fget.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.aliases.fget.__name__: PartialConfigurationFactory.assert_is_list_of_str,
-        HostConfiguration.ssh_user.fget.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.ssh_address.fget.__name__: PartialConfigurationFactory.assert_is_str,
-        HostConfiguration.ssh_port.fget.__name__: PartialConfigurationFactory.assert_is_int,
-        HostConfiguration.ssh_key.fget.__name__: PartialConfigurationFactory.assert_is_existing_file,
+        PropertyKey.HostName: PartialConfigurationFactory.assert_is_str,
+        PropertyKey.HostAliases: PartialConfigurationFactory.assert_is_list_of_str,
+        PropertyKey.SSHUser: PartialConfigurationFactory.assert_is_str,
+        PropertyKey.SSHAddress: PartialConfigurationFactory.assert_is_str,
+        PropertyKey.SSHPort: PartialConfigurationFactory.assert_is_int,
+        PropertyKey.SSHKey: PartialConfigurationFactory.assert_is_existing_file,
     }
 
     __PROPERTY_SETTER: Dict[str, Callable[[HostConfiguration, Any], None]] = {
-        HostConfiguration.name.fget.__name__: HostConfiguration.name.fset,
-        HostConfiguration.aliases.fget.__name__: HostConfiguration.aliases.fset,
-        HostConfiguration.ssh_user.fget.__name__: HostConfiguration.ssh_user.fset,
-        HostConfiguration.ssh_address.fget.__name__: HostConfiguration.ssh_address.fset,
-        HostConfiguration.ssh_port.fget.__name__: HostConfiguration.ssh_port.fset,
-        HostConfiguration.ssh_key.fget.__name__: HostConfiguration.ssh_key.fset,
+        PropertyKey.HostName: HostConfiguration.name.fset,
+        PropertyKey.HostAliases: HostConfiguration.aliases.fset,
+        PropertyKey.SSHUser: HostConfiguration.ssh_user.fset,
+        PropertyKey.SSHAddress: HostConfiguration.ssh_address.fset,
+        PropertyKey.SSHPort: HostConfiguration.ssh_port.fset,
+        PropertyKey.SSHKey: HostConfiguration.ssh_key.fset,
     }
 
     def __init__(self):
@@ -50,19 +60,19 @@ class HostConfigurationFactory(PartialConfigurationFactory):
         return config
 
     @staticmethod
-    def extract_all_configuration(properties: Dict[str, Any]) -> List[HostConfiguration]:
+    def extract_all_configurations(properties: Dict[str, Any]) -> List[HostConfiguration]:
         properties = PartialConfigurationFactory.to_lower(properties)
 
         configs: List[HostConfiguration] = []
         base_config: HostConfiguration = HostConfigurationFactory.extract_shared_configuration(properties)
 
-        if HostConfigurationFactory.__HOSTS_PROPERTY_KEY not in properties:
-            logging.error(f"Mandatory property \"{HostConfigurationFactory.__HOSTS_PROPERTY_KEY}\" was not found!")
+        if HostConfigurationFactory.PropertyKey.Hosts not in properties:
+            logging.error(f"Mandatory property \"{HostConfigurationFactory.PropertyKey.Hosts}\" was not found!")
             raise Exception
 
-        hosts: Any = properties[HostConfigurationFactory.__HOSTS_PROPERTY_KEY]
+        hosts: Any = properties[HostConfigurationFactory.PropertyKey.Hosts]
         if not isinstance(hosts, list):
-            logging.error(f"Property \"{HostConfigurationFactory.__HOSTS_PROPERTY_KEY}\" must be of type list!")
+            logging.error(f"Property \"{HostConfigurationFactory.PropertyKey.Hosts}\" must be of type list!")
             raise Exception
 
         for host in hosts:
@@ -78,7 +88,7 @@ class HostConfigurationFactory(PartialConfigurationFactory):
                 configs.append(HostConfigurationFactory.extract_single_configuration(host, base_config))
 
             else:
-                logging.error(f"Entries within the \"{HostConfigurationFactory.__HOSTS_PROPERTY_KEY}\" must be of type string or dict!")
+                logging.error(f"Entries within the \"{HostConfigurationFactory.PropertyKey.Hosts}\" must be of type string or dict!")
                 raise Exception
 
         return configs
@@ -89,17 +99,17 @@ class HostConfigurationFactory(PartialConfigurationFactory):
 
         config: HostConfiguration = HostConfigurationFactory.default()
 
-        if HostConfigurationFactory.__SHARED_PROPERTY_KEY not in properties:
+        if HostConfigurationFactory.PropertyKey.SharedProperties not in properties:
             return config
 
-        if not isinstance(properties[HostConfigurationFactory.__SHARED_PROPERTY_KEY], dict):
-            logging.error(f"Property \"{HostConfigurationFactory.__SHARED_PROPERTY_KEY}\" must be of type dict!")
+        if not isinstance(properties[HostConfigurationFactory.PropertyKey.SharedProperties], dict):
+            logging.error(f"Property \"{HostConfigurationFactory.PropertyKey.SharedProperties}\" must be of type dict!")
             raise Exception
 
         config = HostConfiguration(config)
         HostConfigurationFactory._set_configuration_properties(config,
-                                                               properties[HostConfigurationFactory.__SHARED_PROPERTY_KEY],
-                                                               HostConfigurationFactory.__SHARABLE_PROPERTY_NAMES)
+                                                               properties[HostConfigurationFactory.PropertyKey.SharedProperties],
+                                                               HostConfigurationFactory.__SHARABLE_PROPERTIES)
 
         return config
 

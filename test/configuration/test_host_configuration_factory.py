@@ -26,10 +26,10 @@ class TestHostConfigurationFactory(TestCase):
                 self.assertTrue(ssh_key.is_file())
 
                 properties: Dict[str, Any] = {
-                    "common": {
-                        "ssh_user": "user",
-                        "ssh_port": 8080,
-                        "ssh_key": str(ssh_key.expanduser().absolute()),
+                    HostConfigurationFactory.PropertyKey.SharedProperties: {
+                        HostConfigurationFactory.PropertyKey.SSHUser: "user",
+                        HostConfigurationFactory.PropertyKey.SSHPort: 8080,
+                        HostConfigurationFactory.PropertyKey.SSHKey: str(ssh_key.expanduser().absolute()),
                     }}
 
                 shared_configuration: HostConfiguration = HostConfigurationFactory.extract_shared_configuration(properties)
@@ -52,8 +52,8 @@ class TestHostConfigurationFactory(TestCase):
         self.assertFalse(ssh_key.exists())
 
         properties: Dict[str, Any] = {
-            "common": {
-                "ssh_key": str(ssh_key.expanduser().absolute())
+            HostConfigurationFactory.PropertyKey.SharedProperties: {
+                HostConfigurationFactory.PropertyKey.SSHKey: str(ssh_key.expanduser().absolute())
             }}
 
         with self.assertRaises(Exception):
@@ -68,8 +68,8 @@ class TestHostConfigurationFactory(TestCase):
             self.assertTrue(ssh_key.is_dir())
 
             properties: Dict[str, Any] = {
-                "common": {
-                    "ssh_key": str(ssh_key.expanduser().absolute())
+                HostConfigurationFactory.PropertyKey.SharedProperties: {
+                    HostConfigurationFactory.PropertyKey.SSHKey: str(ssh_key.expanduser().absolute())
                 }}
 
             with self.assertRaises(Exception):
@@ -86,9 +86,9 @@ class TestHostConfigurationFactory(TestCase):
 
     def test_extract_shared_configuration_ignores_unsupported_properties(self):
         properties: Dict[str, Any] = {
-            "common": {
-                "not_supported": "not_supported",
-                "ssh_port": 8080,
+            HostConfigurationFactory.PropertyKey.SharedProperties: {
+                "not-supported": "not_supported",
+                HostConfigurationFactory.PropertyKey.SSHPort: 8080,
             }}
 
         shared_configuration: HostConfiguration = HostConfigurationFactory.extract_shared_configuration(properties)
@@ -121,12 +121,12 @@ class TestHostConfigurationFactory(TestCase):
                 self.assertTrue(ssh_key.is_file())
 
                 properties: Dict[str, Any] = {
-                    "name": "node01",
-                    "aliases": ["cluster01-node01"],
-                    "ssh_user": "john.doe",
-                    "ssh_address": "192.168.8.12",
-                    "ssh_port": 8080,
-                    "ssh_key": str(ssh_key),
+                    HostConfigurationFactory.PropertyKey.HostName: "node01",
+                    HostConfigurationFactory.PropertyKey.HostAliases: ["cluster01-node01"],
+                    HostConfigurationFactory.PropertyKey.SSHUser: "john.doe",
+                    HostConfigurationFactory.PropertyKey.SSHAddress: "192.168.8.12",
+                    HostConfigurationFactory.PropertyKey.SSHPort: 8080,
+                    HostConfigurationFactory.PropertyKey.SSHKey: str(ssh_key),
                 }
 
                 configuration: HostConfiguration = HostConfigurationFactory.extract_single_configuration(properties)
