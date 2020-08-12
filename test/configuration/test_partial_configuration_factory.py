@@ -1,9 +1,9 @@
-import os
 from pathlib import Path
 from typing import Dict, Any, List
 from unittest import TestCase
 
 from src.configuration.partial_configuration_factory import PartialConfigurationFactory
+from test.test_utility import with_temporary_files, with_temporary_directories, with_absent_files
 
 
 class TestPartialConfigurationFactory(TestCase):
@@ -87,43 +87,29 @@ class TestPartialConfigurationFactory(TestCase):
             PartialConfigurationFactory.assert_is_float(TestCase, "property_name", {"key": "value"})
 
     def test_assert_is_existing_file(self):
-        file: Path = Path(".__temp__").expanduser().absolute()
-        try:
-            with file.open("w+") as f:
-                self.assertTrue(file.exists())
-                self.assertTrue(file.is_file())
+        def _run(paths: List[Path], _) -> None:
+            returned_file: Path = PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(paths[0]))
+            self.assertEqual(str(paths[0]), str(returned_file.expanduser().absolute()))
 
-                returned_file: Path = PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(file))
-                self.assertEqual(str(file), str(returned_file.expanduser().absolute()))
-
-        finally:
-            os.remove(str(file.expanduser().absolute()))
+        with_temporary_files(_run)
 
     def test_assert_is_existing_file_does_not_accept_none(self):
         with self.assertRaises(Exception):
             PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", None)
 
     def test_assert_is_existing_file_does_not_accept_directory(self):
-        directory: Path = Path(".__temp__/")
-        try:
-            directory.mkdir(parents=True, exist_ok=True)
-            self.assertTrue(directory.exists())
-            self.assertFalse(directory.is_file())
-
+        def _run(paths: List[Path]) -> None:
             with self.assertRaises(Exception):
-                PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(directory.expanduser().absolute()))
+                PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(paths[0]))
 
-        finally:
-            os.removedirs(str(directory.expanduser().absolute()))
+        with_temporary_directories(_run)
 
     def test_assert_is_existing_file_does_not_accept_absent_file(self):
-        file: Path = Path(".__temp__.bin").expanduser().absolute()
-        if file.exists():
-            os.remove(str(file))
+        def _run(paths: List[Path]) -> None:
+            with self.assertRaises(Exception):
+                PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(paths[0]))
 
-        self.assertFalse(file.exists())
-        with self.assertRaises(Exception):
-            PartialConfigurationFactory.assert_is_existing_file(TestCase, "property_name", str(file))
+        with_absent_files(_run)
 
     def test_assert_is_existing_file_does_only_accept_strings(self):
         with self.assertRaises(TypeError):

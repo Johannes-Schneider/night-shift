@@ -1,10 +1,9 @@
 import getpass
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import Dict, Callable, Any, Optional, List
 
-from src.configuration.host_configuration import HostConfiguration
+from src.configuration.host.host_configuration import HostConfiguration
 from src.configuration.partial_configuration_factory import PartialConfigurationFactory
 
 
